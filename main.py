@@ -163,7 +163,12 @@ x_labels = ['flower', 'feather', 'sands', 'goblet', 'circlet']
 x = np.arange(len(x_labels)) # This will be [0,1,2,3,4]
 
 #x = np.arange(len(x_labels)): This creates an array [0, 1, 2, 3, 4], which is the position of each category on the x-axis.
+'''
+Why this is necessary:
+Bar plots expect numeric positions** on the x-axis (e.g., 0, 1, 2, etc.), but your actual labels (like 'Flower', 'Feather') are categorical (non-numeric).
+So, x = np.arange(len(x_labels)) provides the numeric positions [0, 1, 2, 3, 4] that correspond to each category in x_labels. This array x is used to determine where to place each bar.
 
+'''
 # Create initial random y values for each category
 y = np.random.randint(1,10, size = len(x_labels))
 
@@ -182,20 +187,100 @@ bars = ax.bar(x,y)
 # Set the x-axis with artifact names
 
 ax.set_xticks(x)
+'''
+ax.set_xticks(x)
+Purpose: This sets the positions of the ticks on the x-axis.
+How it works:
+x = [0, 1, 2, 3, 4] are the numeric positions where we want the ticks (i.e., where the bars are drawn).
+ax.set_xticks(x) tells Matplotlib, "Put the tick marks at these positions on the x-axis."
+Without set_xticks(x), the bars may be drawn, but the x-axis wouldn't know where to place the tick marks for each bar.
+ie it would mess up where the artifacts are supposed to be on the x-axis
+'''
 ax.set_xticklabels(x_labels)
+'''
+ax.set_xticklabels(x_labels)
+Purpose: This replaces the numeric ticks with category names (your artifact types).
+How it works:
+x_labels = ['Flower', 'Feather', 'Sands', 'Goblet', 'Circlet'] are your categorical names.
+ax.set_xticklabels(x_labels) tells Matplotlib, "Replace the tick numbers (0, 1, 2, etc.) with these labels."
+without this no x-values will show up (this just replaced the [0,1,2,3,4] with acc values)
+'''
+
+#set_xticks() and set_xticklabels(): These two lines make sure that the x-axis has the proper labels (Flower, Feather, etc.).
+
+
 
 # Set axis labels
 ax.set_xlabel('Artifact')
 ax.set_ylabel('Random Value')
 ax.set_title('Real-Time Bar Graph of Artifacts')
 
-def update(frame):
-    new_y = np.random.randint(0,10, size = len(x_labels))
+def update(frame): # frame must be a parameter
+    # bars holds the references to all the bars
+    new_y = np.random.randint(0,10, size = len(x_labels)) 
+    # print(bars[0] -> Rectangle(xy=(-0.4, 0), width=0.8, height=7, angle=0)
+    for bar, height in zip(bars, new_y): #->(bar1, height1), (bar2, height2), (bar3, height3), (bar4, height4), (bar5, height5)
+        bar.set_height(height) # bar.set_height is a method from matlib that well sets the height of a single bar
 
-    for bar, height in zip(bars, new_y):
-        bar.set_height(height)
+    return bars # with FuncAnimation the thing we updated must be returned
 
-    return bars
+#The update() function: This is called on each frame by FuncAnimation to update the bar heights.
+
+# new_y: Generates new random y values for each of the five artifact types.
+# bar.set_height(): Updates the height of each individual bar with the new y value
 
 ani = animation.FuncAnimation(fig, update, frames = range(100), interval = 500)
 plt.show()
+
+# why was the code so diff between these 2?
+'''
+1.type of plots are different
+2. Line Plot (line.set_ydata()) vs. Bar Plot (bar.set_height())
+Sine Graph:
+
+The line plot updates by changing the y values for all x positions at once. This is done with the method line.set_ydata() in the update() function.
+Since it's one continuous line, we only need to change the y-values across the entire x-axis.
+
+Bar Graph:
+
+The bar plot updates by changing the height of each bar individually. This is done with bar.set_height() for each bar in the update() function.
+Bars are individual elements, and each one needs to be updated separately. Therefore, a for loop is used to iterate over the bars and update each bar's height based on the new y values.
+
+3. Initialization Differences
+Sine Graph:
+
+For a sine wave, you define the x and y arrays (np.linspace and np.sin). These arrays represent the continuous line plot, and the ax.plot() creates a line object that can be updated.
+Bar Graph:
+
+For a bar plot, you define categorical x values (like 'Flower', 'Feather', etc.) and assign random y values initially. The ax.bar() function creates the bars on the plot. You need to handle each bar individually, as bars are not continuous like a line plot.
+
+4.
+Sine Graph:
+
+Since we are updating a continuous line, you just change the y-values using a mathematical function (in this case, the sine function). You don't need to iterate over multiple objects because the line is treated as one object.
+
+Bar Graph:
+
+You need to update each bar's height individually. Since the bars are individual elements, you loop through the bars and apply new heights to each one.
+
+5. X-Axis Setup
+Sine Graph:
+
+The x-axis is continuous and numerical (from 0 to 2π), and Matplotlib automatically handles the axis ticks and labels.
+
+Bar Graph:
+
+The x-axis uses categorical labels (artifacts like 'Flower', 'Feather', etc.), so you need to manually set the tick positions and labels using ax.set_xticks() and ax.set_xticklabels().
+
+6. Initial Plotting
+Sine Graph:
+You create a single Line2D object (the line plot) and store it in a variable (line, = ax.plot(x, y)).
+Bar Graph:
+You create multiple Rectangle objects (bars) and store them as a list in the bars variable (bars = ax.bar(x, y)).
+
+Summary of Key Differences:
+Sine Graph: Simple line plot that updates by shifting the y values of a single line.
+Bar Graph: Requires updating the height of each bar individually, which means looping over multiple objects (the bars).
+Categorical vs. Numerical X-Axis: The sine wave uses a continuous numerical x-axis, while the bar chart uses categorical labels, requiring different setup for the x-axis.
+
+'''
